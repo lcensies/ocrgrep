@@ -27,8 +27,8 @@ jobs:
           cp -r packaging/debian debian
           chmod +x debian/rules
           VERSION=${GITHUB_REF_NAME#v}
-          dch --create --package ocrgrep --newversion "$VERSION-1" \
-            --distribution unstable --no-conf "Release $VERSION"
+          dch --no-conf --create --package ocrgrep --newversion "$VERSION-1" \
+            --distribution unstable "Release $VERSION"
           dpkg-buildpackage -us -uc -b
 
       - uses: actions/upload-artifact@v4
@@ -53,8 +53,9 @@ jobs:
           sed -i "s/^Version:.*/Version: $VERSION/" packaging/ocrgrep.spec
           mkdir -p ~/rpmbuild/{SOURCES,SPECS}
           cp packaging/ocrgrep.spec ~/rpmbuild/SPECS/
-          git archive --format=tar.gz --prefix=ocrgrep-$VERSION/ HEAD \
-            > ~/rpmbuild/SOURCES/ocrgrep-$VERSION.tar.gz
+          tar czf ~/rpmbuild/SOURCES/ocrgrep-$VERSION.tar.gz \
+            --transform "s|^|ocrgrep-$VERSION/|" \
+            --exclude='.git' --exclude='packaging' .
           rpmbuild -bb ~/rpmbuild/SPECS/ocrgrep.spec
 
       - uses: actions/upload-artifact@v4

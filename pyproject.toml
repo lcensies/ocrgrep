@@ -1,5 +1,5 @@
 [project]
-name = "tsgrep"
+name = "ocrgrep"
 version = "0.1.0"
 description = "Parallel OCR grep over images with dedup and checkpointing"
 readme = "README.md"
@@ -11,4 +11,4 @@ dependencies = [
 ]
 
 [project.scripts]
-tsgrep = "ocr_grep:main"
+ocrgrep = "ocr_grep:main"

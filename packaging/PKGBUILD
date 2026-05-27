@@ -1,10 +1,10 @@
 # Maintainer: your name <your@email>
-pkgname=tsgrep
+pkgname=ocrgrep
 pkgver=0.1.0
 pkgrel=1
 pkgdesc="Parallel OCR grep over images"
 arch=('x86_64')
-url="https://github.com/youruser/tsgrep"
+url="https://github.com/youruser/ocrgrep"
 license=('MIT')
 depends=('tesseract' 'python' 'python-pillow' 'python-tqdm')
 makedepends=('python-build' 'python-installer' 'python-hatchling' 'uv')

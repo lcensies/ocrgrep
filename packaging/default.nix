@@ -1,7 +1,7 @@
 { lib, python3Packages, tesseract5, leptonica }:
 
 python3Packages.buildPythonApplication {
-  pname = "tsgrep";
+  pname = "ocrgrep";
   version = "0.1.0";
   src = ../.;
 
@@ -20,6 +20,6 @@ python3Packages.buildPythonApplication {
   meta = {
     description = "Parallel OCR grep over images";
     license = lib.licenses.mit;
-    mainProgram = "tsgrep";
+    mainProgram = "ocrgrep";
   };
 }

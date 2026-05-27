@@ -1,9 +1,9 @@
-Name:           tsgrep
+Name:           ocrgrep
 Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Parallel OCR grep over images
 License:        MIT
-URL:            https://github.com/youruser/tsgrep
+URL:            https://github.com/youruser/ocrgrep
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  python3-devel
@@ -24,13 +24,13 @@ of images whose text matches a pattern. Supports dedup and checkpointing.
 pip3 wheel --no-deps --wheel-dir dist .
 
 %install
-pip3 install --no-index --find-links dist --root %{buildroot} --prefix /usr tsgrep
+pip3 install --no-index --find-links dist --root %{buildroot} --prefix /usr ocrgrep
 
 %files
 %license LICENSE
-/usr/bin/tsgrep
+/usr/bin/ocrgrep
 %{python3_sitelib}/ocr_grep*
-%{python3_sitelib}/tsgrep*
+%{python3_sitelib}/ocrgrep*
 
 %changelog
 * $(date '+%a %b %d %Y') packager <packager@example.com> - 0.1.0-1

@@ -1,4 +1,4 @@
-Source: tsgrep
+Source: ocrgrep
 Section: utils
 Priority: optional
 Maintainer: Your Name <your@email>
@@ -6,7 +6,7 @@ Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptoo
                tesseract-ocr, libtesseract-dev, libleptonica-dev
 Standards-Version: 4.6.0
 
-Package: tsgrep
+Package: ocrgrep
 Architecture: any
 Depends: ${python3:Depends}, ${misc:Depends}, tesseract-ocr,
          python3-pil, python3-tqdm

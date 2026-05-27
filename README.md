@@ -1,4 +1,4 @@
-# tsgrep
+# ocrgrep
 
 `grep` for image text. Runs Tesseract OCR in parallel across a directory tree and prints paths of images whose text matches a pattern.
 
@@ -31,18 +31,18 @@ uv sync
 ## Usage
 
 ```
-tsgrep [OPTIONS] PATTERN [DIRS...]
-tsgrep [OPTIONS] -e PATTERN [-e PATTERN ...] [DIRS...]
+ocrgrep [OPTIONS] PATTERN [DIRS...]
+ocrgrep [OPTIONS] -e PATTERN [-e PATTERN ...] [DIRS...]
 ```
 
 ```bash
-tsgrep "Invoice" ~/scans
-tsgrep -e "Invoice" -e "Receipt" ~/docs ~/archive
-tsgrep -v "Draft" .                      # files NOT containing "Draft"
-tsgrep -c "Total" .                      # print filename:match_count
-tsgrep --lang deu "Rechnung" ~/scans     # German OCR
-tsgrep --workers 8 "signature" .
-tsgrep "Invoice" . | xargs -I{} cp {} ~/invoices/
+ocrgrep "Invoice" ~/scans
+ocrgrep -e "Invoice" -e "Receipt" ~/docs ~/archive
+ocrgrep -v "Draft" .                      # files NOT containing "Draft"
+ocrgrep -c "Total" .                      # print filename:match_count
+ocrgrep --lang deu "Rechnung" ~/scans     # German OCR
+ocrgrep --workers 8 "signature" .
+ocrgrep "Invoice" . | xargs -I{} cp {} ~/invoices/
 ```
 
 ## Options

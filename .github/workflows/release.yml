@@ -14,11 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: astral-sh/setup-uv@v4
+
       - name: Install build deps
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential debhelper dh-python python3-all python3-setuptools \
+            build-essential debhelper dh-python python3-all \
             tesseract-ocr libtesseract-dev libleptonica-dev \
             python3-pil python3-tqdm devscripts libdistro-info-perl
 

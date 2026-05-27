@@ -1,3 +1,14 @@
 #!/usr/bin/make -f
+export DH_VERBOSE=1
+
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@ --with python3
+
+override_dh_auto_build:
+	uv build --wheel --out-dir dist
+
+override_dh_auto_install:
+	uv pip install --no-deps --no-index --find-links dist \
+		--target $(CURDIR)/debian/ocrgrep/usr/lib/python3/dist-packages ocrgrep
+	install -D -m 755 $(CURDIR)/debian/ocrgrep/usr/lib/python3/dist-packages/ocr_grep.py \
+		$(CURDIR)/debian/ocrgrep/usr/bin/ocrgrep

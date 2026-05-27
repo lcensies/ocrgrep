@@ -5,7 +5,8 @@ description = "Parallel OCR grep over images with dedup and checkpointing"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "pytesseract",
+    "tesserocr",
+    "Pillow",
     "tqdm",
 ]
 

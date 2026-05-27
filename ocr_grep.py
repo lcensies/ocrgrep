@@ -16,24 +16,41 @@ import os
 import re
 import signal
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import islice
 from pathlib import Path
 
-import pytesseract
+import tesserocr
 from tqdm import tqdm
 
-# Tesseract spawns its own threads; prevent N-workers × M-threads explosion
+# Prevent N-workers × M-threads explosion inside tesseract
 os.environ.setdefault("OMP_THREAD_LIMIT", "1")
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".webp"}
 CHECKPOINT_FILE = "/tmp/ocr_grep_checkpoint.json"
-CHECKPOINT_FLUSH_EVERY = 50   # write checkpoint after this many completions
-SUBMIT_BATCH_SIZE = 256        # max futures in-flight at once (backpressure)
+CHECKPOINT_FLUSH_EVERY = 50
+SUBMIT_BATCH_SIZE = 256
+
+# ---------------------------------------------------------------------------
+# Thread-local tesseract API — model loaded once per thread, reused per image
+# ---------------------------------------------------------------------------
+
+_thread_local = threading.local()
+
+
+def _get_api(lang: str, psm: int) -> tesserocr.PyTessBaseAPI:
+    key = (lang, psm)
+    if getattr(_thread_local, "api_key", None) != key:
+        if hasattr(_thread_local, "api"):
+            _thread_local.api.End()
+        _thread_local.api = tesserocr.PyTessBaseAPI(lang=lang, psm=psm)
+        _thread_local.api_key = key
+    return _thread_local.api
 
 
 # ---------------------------------------------------------------------------
-# File key — (size, mtime_ns) tuple, no read needed
+# File key — (size, mtime_ns), no read needed
 # ---------------------------------------------------------------------------
 
 def file_key(path: Path) -> str:
@@ -57,24 +74,26 @@ def load_checkpoint(cp_path: Path) -> dict[str, str]:
 def save_checkpoint(cp_path: Path, data: dict[str, str]) -> None:
     tmp = cp_path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2))
-    tmp.replace(cp_path)   # atomic on POSIX
+    tmp.replace(cp_path)  # atomic on POSIX
 
 
 # ---------------------------------------------------------------------------
-# OCR worker — pass path string directly, no Pillow decode
+# OCR worker
 # ---------------------------------------------------------------------------
 
 def ocr_matches(path: Path, regex: re.Pattern, lang: str, psm: int) -> bool:
-    """Return True if OCR text matches regex."""
     try:
-        text = pytesseract.image_to_string(str(path), lang=lang, config=f"--psm {psm}")
+        from PIL import Image
+        api = _get_api(lang, psm)
+        api.SetImage(Image.open(path))
+        text = api.GetUTF8Text()
         return bool(regex.search(text))
     except Exception:
         return False
 
 
 # ---------------------------------------------------------------------------
-# File discovery — generator, no upfront list
+# File discovery — generator
 # ---------------------------------------------------------------------------
 
 def iter_images(dirs: list[Path]):
@@ -190,7 +209,6 @@ def main() -> None:
     pending_iter = iter(to_process)
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        # Seed initial batch
         active: dict = {}
         for p, k in islice(pending_iter, SUBMIT_BATCH_SIZE):
             fut = pool.submit(ocr_matches, p, regex, args.lang, args.psm)
@@ -203,13 +221,8 @@ def main() -> None:
                         f.cancel()
                     break
 
-                # Wait for next completion
-                done_futs = []
-                for fut in list(active):
-                    if fut.done():
-                        done_futs.append(fut)
+                done_futs = [f for f in active if f.done()]
                 if not done_futs:
-                    # block on next ready future
                     import time; time.sleep(0.01)
                     continue
 
@@ -228,16 +241,17 @@ def main() -> None:
                     bar.update(1)
                     completed_since_flush += 1
 
-                    # Periodic flush
                     if not args.no_checkpoint and completed_since_flush >= CHECKPOINT_FLUSH_EVERY:
                         save_checkpoint(cp_path, checkpoint)
                         completed_since_flush = 0
 
-                    # Refill pipeline
                     if not shutdown:
                         for p2, k2 in islice(pending_iter, len(done_futs)):
                             f2 = pool.submit(ocr_matches, p2, regex, args.lang, args.psm)
                             active[f2] = (p2, k2)
+
+    # Cleanup thread-local APIs (best-effort)
+    # (threads are already joined by executor __exit__)
 
     if not args.no_checkpoint:
         save_checkpoint(cp_path, checkpoint)

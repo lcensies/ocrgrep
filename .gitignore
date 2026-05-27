@@ -11,3 +11,8 @@ wheels/
 
 # OCR grep checkpoints
 .ocr_grep_checkpoint.json
+
+
+# Added by cargo
+
+/target

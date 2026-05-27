@@ -27,6 +27,7 @@ pip3 wheel --no-deps --wheel-dir dist .
 %install
 pip3 install --no-deps --no-index --find-links dist \
     --target %{buildroot}%{python3_sitelib} ocrgrep
+rm -rf %{buildroot}%{python3_sitelib}/bin
 install -D -m 755 /dev/stdin %{buildroot}/usr/bin/ocrgrep <<'EOF'
 #!/bin/sh
 exec python3 -c "from ocr_grep import main; main()" "$@"
@@ -36,6 +37,7 @@ EOF
 /usr/bin/ocrgrep
 %{python3_sitelib}/ocr_grep*
 %{python3_sitelib}/ocrgrep*
+%{python3_sitelib}/__pycache__/ocr_grep*
 
 %changelog
 * Wed May 27 2026 packager <lcensies@github.com> - 0.1.0-1

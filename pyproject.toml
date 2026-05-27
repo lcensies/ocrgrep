@@ -1,0 +1,13 @@
+[project]
+name = "tsgrep"
+version = "0.1.0"
+description = "Parallel OCR grep over images with dedup and checkpointing"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pytesseract",
+    "tqdm",
+]
+
+[project.scripts]
+tsgrep = "ocr_grep:main"

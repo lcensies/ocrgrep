@@ -46,7 +46,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          dnf install -y git rpm-build python3-devel python3-pip \
+          dnf install -y git rpm-build python3-devel python3-pip uv \
             tesseract-devel leptonica-devel python3-pillow python3-tqdm
 
       - name: Build .rpm

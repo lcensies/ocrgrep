@@ -21,17 +21,21 @@ of images whose text matches a pattern. Supports dedup and checkpointing.
 %autosetup
 
 %build
-pip3 wheel --no-deps --wheel-dir dist .
+uv build --wheel --out-dir dist
 
 %install
-pip3 install --no-deps --no-index --find-links dist --root %{buildroot} --prefix /usr ocrgrep
+uv pip install --no-deps --no-index --find-links dist \
+    --target %{buildroot}%{python3_sitelib} ocrgrep
+install -D -m 755 /dev/stdin %{buildroot}/usr/bin/ocrgrep <<'EOF'
+#!/bin/sh
+exec python3 -c "from ocr_grep import main; main()" "$@"
+EOF
 
 %files
-%license LICENSE
 /usr/bin/ocrgrep
 %{python3_sitelib}/ocr_grep*
 %{python3_sitelib}/ocrgrep*
 
 %changelog
-* $(date '+%a %b %d %Y') packager <lcensies@gmail.com> - 0.1.0-1
+* Tue May 27 2026 packager <lcensies@github.com> - 0.1.0-1
 - Initial package

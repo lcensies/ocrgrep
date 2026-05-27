@@ -8,6 +8,9 @@ on:
 jobs:
   build-deb:
     runs-on: ubuntu-latest
+    env:
+      DEBEMAIL: "ci@localhost"
+      DEBFULLNAME: "CI"
     steps:
       - uses: actions/checkout@v4
 
@@ -15,16 +18,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            debhelper dh-python python3-all python3-setuptools \
+            build-essential debhelper dh-python python3-all python3-setuptools \
             tesseract-ocr libtesseract-dev libleptonica-dev \
-            python3-pil python3-tqdm devscripts
+            python3-pil python3-tqdm devscripts libdistro-info-perl
 
       - name: Build .deb
         run: |
           cp -r packaging/debian debian
+          chmod +x debian/rules
           VERSION=${GITHUB_REF_NAME#v}
           dch --create --package ocrgrep --newversion "$VERSION-1" \
-            --distribution unstable "Release $VERSION"
+            --distribution unstable --no-conf "Release $VERSION"
           dpkg-buildpackage -us -uc -b
 
       - uses: actions/upload-artifact@v4
@@ -40,7 +44,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          dnf install -y rpm-build python3-devel python3-pip \
+          dnf install -y git rpm-build python3-devel python3-pip \
             tesseract-devel leptonica-devel python3-pillow python3-tqdm
 
       - name: Build .rpm

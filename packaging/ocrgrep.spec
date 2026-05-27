@@ -5,6 +5,7 @@ Summary:        Parallel OCR grep over images
 License:        MIT
 URL:            https://github.com/lcensies/ocrgrep
 Source0:        %{name}-%{version}.tar.gz
+%global debug_package %{nil}
 
 BuildRequires:  python3-devel
 BuildRequires:  tesseract-devel

@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            debhelper dh-python python3-all python3-setuptools \
+            tesseract-ocr libtesseract-dev libleptonica-dev \
+            python3-pil python3-tqdm devscripts
+
+      - name: Build .deb
+        run: |
+          cp -r packaging/debian debian
+          VERSION=${GITHUB_REF_NAME#v}
+          dch --create --package tsgrep --newversion "$VERSION-1" \
+            --distribution unstable "Release $VERSION"
+          dpkg-buildpackage -us -uc -b
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: ../*.deb
+
+  build-rpm:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          dnf install -y rpm-build python3-devel python3-pip \
+            tesseract-devel leptonica-devel python3-pillow python3-tqdm
+
+      - name: Build .rpm
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          sed -i "s/^Version:.*/Version: $VERSION/" packaging/tsgrep.spec
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+          cp packaging/tsgrep.spec ~/rpmbuild/SPECS/
+          git archive --format=tar.gz --prefix=tsgrep-$VERSION/ HEAD \
+            > ~/rpmbuild/SOURCES/tsgrep-$VERSION.tar.gz
+          rpmbuild -bb ~/rpmbuild/SPECS/tsgrep.spec
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: ~/rpmbuild/RPMS/**/*.rpm
+
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/
+
+  release:
+    needs: [build-deb, build-rpm, build-wheel]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

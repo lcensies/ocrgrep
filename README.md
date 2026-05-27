@@ -1,29 +1,26 @@
 # tsgrep
 
-Parallel OCR grep over images. Finds images containing a text pattern using
-Tesseract. Supports deduplication, checkpointing, and resuming interrupted scans.
+`grep` for image text. Runs Tesseract OCR in parallel across a directory tree and prints paths of images whose text matches a pattern.
 
-## System dependencies
-
-Install before `uv sync`:
+## Dependencies
 
 ```bash
 # Debian / Ubuntu
 sudo apt install tesseract-ocr libtesseract-dev libleptonica-dev
 
-# Language packs (add what you need)
-sudo apt install tesseract-ocr-rus   # Russian
-sudo apt install tesseract-ocr-eng   # English (usually pre-installed)
-
 # Arch
-sudo pacman -S tesseract tesseract-data-rus
+sudo pacman -S tesseract tesseract-data-eng
 
 # macOS
-brew install tesseract tesseract-lang
+brew install tesseract
 ```
 
-> `tesserocr` compiles a C extension against `libtesseract-dev` at install time.
-> The system headers must be present before running `uv sync`.
+Language packs (install as needed):
+```bash
+sudo apt install tesseract-ocr-deu   # German
+sudo apt install tesseract-ocr-fra   # French
+# full list: apt search tesseract-ocr-
+```
 
 ## Install
 
@@ -33,53 +30,70 @@ uv sync
 
 ## Usage
 
+```
+tsgrep [OPTIONS] PATTERN [DIRS...]
+tsgrep [OPTIONS] -e PATTERN [-e PATTERN ...] [DIRS...]
+```
+
 ```bash
-# Basic — search for "Диплом" (case-insensitive) in current directory
-uv run tsgrep "Диплом" .
-
-# After uv sync installs the entrypoint
-tsgrep "Диплом" .
-
-# Multiple directories
-tsgrep "Диплом" ~/scans /mnt/archive
-
-# English, more workers
-tsgrep --lang eng --workers 8 "Invoice" ~/docs
-
-# With sudo (use venv python directly)
-sudo .venv/bin/python ocr_grep.py "Диплом" /root/scans
+tsgrep "Invoice" ~/scans
+tsgrep -e "Invoice" -e "Receipt" ~/docs ~/archive
+tsgrep -v "Draft" .                      # files NOT containing "Draft"
+tsgrep -c "Total" .                      # print filename:match_count
+tsgrep --lang deu "Rechnung" ~/scans     # German OCR
+tsgrep --workers 8 "signature" .
+tsgrep "Invoice" . | xargs -I{} cp {} ~/invoices/
 ```
 
 ## Options
 
+**Pattern**
+
+| Flag | Description |
+|------|-------------|
+| `PATTERN` | Regex (or literal with `-F`), case-insensitive by default |
+| `-e PATTERN` | Add a pattern; OR'd with others; repeatable |
+| `-F` | Treat pattern as literal string |
+| `-i` / `--no-ignore-case` | Case-insensitive (default on) / case-sensitive |
+
+**Output**
+
+| Flag | Description |
+|------|-------------|
+| `-v` | Print files that do NOT match |
+| `-c` | Print `filename:N` (match count per file) |
+| `-q` | No output; exit 0 if any match, 1 if none |
+| `-m N` | Stop after N matching files |
+
+**File filtering**
+
+| Flag | Description |
+|------|-------------|
+| `--include GLOB` | Only scan filenames matching GLOB (repeatable) |
+| `--exclude GLOB` | Skip filenames matching GLOB (repeatable) |
+
+**Tesseract**
+
 | Flag | Default | Description |
 |------|---------|-------------|
-| `PATTERN` | — | Text or regex, case-insensitive |
-| `DIRS` | `.` | Directories or files to scan |
-| `-l`, `--lang` | `rus` | Tesseract language code |
-| `--psm` | `6` | Tesseract page segmentation mode |
-| `-w`, `--workers` | `min(cpu_count, 4)` | Parallel OCR threads |
+| `-l` / `--lang` | `eng` | Tesseract language code |
+| `--psm` | `6` | Page segmentation mode |
+| `-w` / `--workers` | `min(cpu_count, 4)` | Parallel OCR threads |
+
+**Checkpoint**
+
+| Flag | Default | Description |
+|------|---------|-------------|
 | `--checkpoint` | `/tmp/ocr_grep_checkpoint.json` | Checkpoint file path |
-| `--no-checkpoint` | off | Disable checkpointing entirely |
-| `--reset` | off | Delete checkpoint and start fresh |
+| `--no-checkpoint` | — | Disable checkpointing |
+| `--reset` | — | Delete checkpoint and start fresh |
 
-## Features
+Resuming: re-run the same command after interruption — already-processed files are skipped instantly using `(size, mtime_ns)` as a cache key.
 
-- **Parallel OCR** — `ThreadPoolExecutor` with backpressure (max 256 in-flight futures)
-- **Deduplication** — skips files already seen by `(size, mtime_ns)` key
-- **Checkpointing** — flushed every 50 completions; survives Ctrl+C and crashes
-- **Resume** — re-run the same command, already-processed files are skipped instantly
-- **Regex patterns** — `PATTERN` is a full Python regex (`re.IGNORECASE`)
-- **tesserocr** — direct C API binding; Tesseract LSTM model loaded once per thread
-
-## Supported image formats
+## Supported formats
 
 `.png` `.jpg` `.jpeg` `.tiff` `.tif` `.bmp` `.webp`
 
-## Output
+## Packaging
 
-Matching file paths are written to stdout (one per line), suitable for piping:
-
-```bash
-tsgrep "Диплом" . | xargs -I{} cp {} ~/diploms/
-```
+See [`packaging/`](packaging/) for Arch (PKGBUILD), RPM spec, Debian rules, Nix derivation, and Dockerfile.

@@ -1,0 +1,22 @@
+# Maintainer: your name <your@email>
+pkgname=tsgrep
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Parallel OCR grep over images"
+arch=('x86_64')
+url="https://github.com/youruser/tsgrep"
+license=('MIT')
+depends=('tesseract' 'python' 'python-pillow' 'python-tqdm')
+makedepends=('python-build' 'python-installer' 'python-hatchling' 'uv')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    uv build --wheel
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}

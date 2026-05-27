@@ -1,0 +1,37 @@
+Name:           tsgrep
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        Parallel OCR grep over images
+License:        MIT
+URL:            https://github.com/youruser/tsgrep
+Source0:        %{name}-%{version}.tar.gz
+
+BuildRequires:  python3-devel
+BuildRequires:  tesseract-devel
+BuildRequires:  leptonica-devel
+Requires:       tesseract
+Requires:       python3-pillow
+Requires:       python3-tqdm
+
+%description
+Runs Tesseract OCR in parallel across a directory tree and prints paths
+of images whose text matches a pattern. Supports dedup and checkpointing.
+
+%prep
+%autosetup
+
+%build
+pip3 wheel --no-deps --wheel-dir dist .
+
+%install
+pip3 install --no-index --find-links dist --root %{buildroot} --prefix /usr tsgrep
+
+%files
+%license LICENSE
+/usr/bin/tsgrep
+%{python3_sitelib}/ocr_grep*
+%{python3_sitelib}/tsgrep*
+
+%changelog
+* $(date '+%a %b %d %Y') packager <packager@example.com> - 0.1.0-1
+- Initial package

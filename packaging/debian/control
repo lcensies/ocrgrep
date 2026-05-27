@@ -1,0 +1,16 @@
+Source: tsgrep
+Section: utils
+Priority: optional
+Maintainer: Your Name <your@email>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools,
+               tesseract-ocr, libtesseract-dev, libleptonica-dev
+Standards-Version: 4.6.0
+
+Package: tsgrep
+Architecture: any
+Depends: ${python3:Depends}, ${misc:Depends}, tesseract-ocr,
+         python3-pil, python3-tqdm
+Description: Parallel OCR grep over images
+ Runs Tesseract OCR in parallel across a directory tree and prints paths
+ of images whose text matches a pattern. Supports dedup, checkpointing,
+ and grep-compatible flags (-v, -c, -q, -m, -F, -i, -e, --include, --exclude).

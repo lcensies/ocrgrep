@@ -21,10 +21,10 @@ of images whose text matches a pattern. Supports dedup and checkpointing.
 %autosetup
 
 %build
-uv build --wheel --out-dir dist
+pip3 wheel --no-deps --wheel-dir dist .
 
 %install
-uv pip install --no-deps --no-index --find-links dist \
+pip3 install --no-deps --no-index --find-links dist \
     --target %{buildroot}%{python3_sitelib} ocrgrep
 install -D -m 755 /dev/stdin %{buildroot}/usr/bin/ocrgrep <<'EOF'
 #!/bin/sh
@@ -37,5 +37,5 @@ EOF
 %{python3_sitelib}/ocrgrep*
 
 %changelog
-* Tue May 27 2026 packager <lcensies@github.com> - 0.1.0-1
+* Wed May 27 2026 packager <lcensies@github.com> - 0.1.0-1
 - Initial package

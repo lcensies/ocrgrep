@@ -32,11 +32,12 @@ jobs:
           dch --no-conf --create --package ocrgrep --newversion "$VERSION-1" \
             --distribution unstable "Release $VERSION"
           dpkg-buildpackage -us -uc -b
+          mv ../*.deb .
 
       - uses: actions/upload-artifact@v4
         with:
           name: deb
-          path: ../*.deb
+          path: "*.deb"
 
   build-rpm:
     runs-on: ubuntu-latest
@@ -46,7 +47,7 @@ jobs:
 
       - name: Install build deps
         run: |
-          dnf install -y git rpm-build python3-devel python3-pip uv \
+          dnf install -y git rpm-build python3-devel python3-pip \
             tesseract-devel leptonica-devel python3-pillow python3-tqdm
 
       - name: Build .rpm
